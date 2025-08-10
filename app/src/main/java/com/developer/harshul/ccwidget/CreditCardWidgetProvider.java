@@ -147,9 +147,25 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onDeleted(Context context, int[] appWidgetIds) {
-        // Clean up preferences when widget is deleted
+        // Clean up preferences and cancel reminders when widget is deleted
         for (int appWidgetId : appWidgetIds) {
             SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
+
+            // Cancel all reminders for this widget before deleting
+            String cardsDataJson = prefs.getString(CARDS_DATA_KEY, "");
+            if (!cardsDataJson.isEmpty()) {
+                try {
+                    JSONArray cardsArray = new JSONArray(cardsDataJson);
+                    for (int i = 0; i < cardsArray.length(); i++) {
+                        JSONObject cardObj = cardsArray.getJSONObject(i);
+                        String cardName = cardObj.getString("name");
+                        NotificationReminderService.cancelReminders(context, cardName);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
             prefs.edit().clear().apply();
         }
     }

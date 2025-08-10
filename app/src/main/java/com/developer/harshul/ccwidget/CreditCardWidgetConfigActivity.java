@@ -200,6 +200,9 @@ public class CreditCardWidgetConfigActivity extends Activity {
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
         CreditCardWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetId);
 
+        // Schedule reminders for all cards
+        NotificationReminderService.scheduleReminders(this, appWidgetId);
+
         // Set result and finish
         Intent resultValue = new Intent();
         resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);

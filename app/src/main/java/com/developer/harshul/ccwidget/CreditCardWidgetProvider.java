@@ -12,12 +12,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONException;
 
 public class CreditCardWidgetProvider extends AppWidgetProvider {
 
     private static final String PREFS_NAME = "CCWidgetPrefs";
-    private static final String CARD_NAME_KEY = "card_name";
-    private static final String DUE_DATE_KEY = "due_date";
+    private static final String CARDS_DATA_KEY = "cards_data";
     private static final String ACTION_WIDGET_CLICKED = "ACTION_WIDGET_CLICKED";
 
     @Override
@@ -32,17 +34,72 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
 
         // Get saved data
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
-        String cardName = prefs.getString(CARD_NAME_KEY, "Credit Card");
-        long dueDateMillis = prefs.getLong(DUE_DATE_KEY, 0);
+        String cardsDataJson = prefs.getString(CARDS_DATA_KEY, "");
 
-        if (dueDateMillis == 0) {
-            // Set default due date to next month's 15th
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.MONTH, 1);
-            cal.set(Calendar.DAY_OF_MONTH, 15);
-            dueDateMillis = cal.getTimeInMillis();
+        if (!cardsDataJson.isEmpty()) {
+            try {
+                JSONArray cardsArray = new JSONArray(cardsDataJson);
+                if (cardsArray.length() > 0) {
+                    // Find the card with the nearest due date
+                    String nearestCardName = "";
+                    long nearestDueDate = Long.MAX_VALUE;
+                    long currentTime = System.currentTimeMillis();
+
+                    for (int i = 0; i < cardsArray.length(); i++) {
+                        JSONObject cardObj = cardsArray.getJSONObject(i);
+                        String cardName = cardObj.getString("name");
+                        long dueDate = cardObj.getLong("dueDate");
+
+                        // Only consider future dates or today, unless all are overdue
+                        if (dueDate >= currentTime - TimeUnit.DAYS.toMillis(1)) {
+                            if (dueDate < nearestDueDate) {
+                                nearestDueDate = dueDate;
+                                nearestCardName = cardName;
+                            }
+                        }
+                    }
+
+                    // If no future dates found, show the most recently overdue
+                    if (nearestDueDate == Long.MAX_VALUE) {
+                        for (int i = 0; i < cardsArray.length(); i++) {
+                            JSONObject cardObj = cardsArray.getJSONObject(i);
+                            String cardName = cardObj.getString("name");
+                            long dueDate = cardObj.getLong("dueDate");
+
+                            if (dueDate > nearestDueDate || nearestDueDate == Long.MAX_VALUE) {
+                                nearestDueDate = dueDate;
+                                nearestCardName = cardName;
+                            }
+                        }
+                    }
+
+                    updateWidgetDisplay(views, nearestCardName, nearestDueDate, cardsArray.length());
+                } else {
+                    // No cards found, show default
+                    updateWidgetDisplay(views, "Credit Card", getDefaultDueDate(), 1);
+                }
+            } catch (JSONException e) {
+                // If parsing fails, show default
+                updateWidgetDisplay(views, "Credit Card", getDefaultDueDate(), 1);
+            }
+        } else {
+            // No data found, show default
+            updateWidgetDisplay(views, "Credit Card", getDefaultDueDate(), 1);
         }
 
+        // Set up click intent to open configuration
+        Intent intent = new Intent(context, CreditCardWidgetConfigActivity.class);
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context, appWidgetId, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+
+        appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    private static void updateWidgetDisplay(RemoteViews views, String cardName, long dueDateMillis, int totalCards) {
         // Calculate days remaining
         long currentTime = System.currentTimeMillis();
         long diffMillis = dueDateMillis - currentTime;
@@ -53,7 +110,11 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         String dueDateStr = dateFormat.format(new Date(dueDateMillis));
 
         // Update widget views
-        views.setTextViewText(R.id.card_name, cardName);
+        String displayName = cardName;
+        if (totalCards > 1) {
+            displayName = cardName + " (+" + (totalCards - 1) + " more)";
+        }
+        views.setTextViewText(R.id.card_name, displayName);
         views.setTextViewText(R.id.due_date, dueDateStr);
 
         // Set days remaining text and color
@@ -75,17 +136,13 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
 
         views.setTextViewText(R.id.days_remaining, daysText);
         views.setTextColor(R.id.days_remaining, textColor);
+    }
 
-        // Set up click intent to open configuration
-        Intent intent = new Intent(context, CreditCardWidgetConfigActivity.class);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context, appWidgetId, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
-
-        appWidgetManager.updateAppWidget(appWidgetId, views);
+    private static long getDefaultDueDate() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, 1);
+        cal.set(Calendar.DAY_OF_MONTH, 15);
+        return cal.getTimeInMillis();
     }
 
     @Override

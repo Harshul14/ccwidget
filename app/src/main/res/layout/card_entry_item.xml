@@ -1,56 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@drawable/card_entry_background"
-    android:padding="12dp"
-    android:layout_marginBottom="8dp">
+    android:layout_marginBottom="@dimen/spacing_md"
+    app:cardCornerRadius="@dimen/corner_radius_md"
+    app:cardElevation="1dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
 
-        <TextView
-            android:layout_width="0dp"
+        <!-- Header with remove button -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Card Name:"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/spacing_md">
 
-        <ImageButton
-            android:id="@+id/remove_card_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/remove_button_background"
-            android:src="@android:drawable/ic_menu_delete"
-            android:contentDescription="Remove Card"
-            android:scaleType="fitCenter"
-            android:padding="4dp" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Card Details"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="@color/on_surface" />
+
+            <ImageButton
+                android:id="@+id/remove_card_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/remove_button_background"
+                android:src="@drawable/ic_remove_24"
+                android:contentDescription="Remove Card"
+                android:scaleType="fitCenter" />
+
+        </LinearLayout>
+
+        <!-- Card Name Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            android:hint="Card name"
+            app:boxCornerRadiusTopStart="@dimen/corner_radius_sm"
+            app:boxCornerRadiusTopEnd="@dimen/corner_radius_sm"
+            app:boxCornerRadiusBottomStart="@dimen/corner_radius_sm"
+            app:boxCornerRadiusBottomEnd="@dimen/corner_radius_sm"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/card_name_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="e.g., Visa, MasterCard, AMEX"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:inputType="text"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Due Date Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/due_date_button"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:text="Select Due Date"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            android:textColor="@color/on_surface_variant"
+            app:icon="@drawable/ic_calendar_24"
+            app:iconGravity="start"
+            app:iconTint="@color/on_surface_variant"
+            app:cornerRadius="@dimen/corner_radius_sm"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
 
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/card_name_edit"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:hint="e.g., Visa, MasterCard, AMEX"
-        android:background="@drawable/edit_text_background"
-        android:padding="8dp"
-        android:textSize="14sp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="8dp" />
-
-    <Button
-        android:id="@+id/due_date_button"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:text="Due: Select Date"
-        android:background="@drawable/date_button_background"
-        android:textColor="#333333"
-        android:textSize="14sp" />
-
-</LinearLayout>
+</com.google.android.material.card.MaterialCardView>

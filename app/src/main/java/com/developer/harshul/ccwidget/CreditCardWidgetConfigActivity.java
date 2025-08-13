@@ -1,5 +1,7 @@
 package com.developer.harshul.ccwidget;
 
+// CreditCardWidgetConfigActivity.java - COMPLETE FIXED VERSION
+
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.appwidget.AppWidgetManager;
@@ -23,14 +25,21 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-public class CreditCardWidgetConfigActivity extends Activity {
+// ADD THESE IMPORTS
+import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
+
+public class CreditCardWidgetConfigActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "CCWidgetPrefs";
     private static final String CARDS_DATA_KEY = "cards_data";
 
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private LinearLayout cardsContainer;
-    private Button addCardButton;
+    private FloatingActionButton addCardFab;  // CHANGED FROM Button
+    private MaterialToolbar toolbar;          // ADDED
     private List<CardEntry> cardEntries;
 
     @Override
@@ -38,9 +47,16 @@ public class CreditCardWidgetConfigActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_widget_config);
 
+        // Initialize toolbar
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
         // Initialize views
         cardsContainer = findViewById(R.id.cards_container);
-        addCardButton = findViewById(R.id.add_card_button);
+        addCardFab = findViewById(R.id.add_card_button);  // CHANGED VARIABLE NAME
         Button saveButton = findViewById(R.id.save_button);
 
         // Get widget ID
@@ -61,12 +77,19 @@ public class CreditCardWidgetConfigActivity extends Activity {
         // Load existing data or add default card
         loadExistingData();
 
-        // Set up buttons
-        addCardButton.setOnClickListener(v -> addNewCardEntry());
+        // Set up buttons - UPDATED FAB REFERENCE
+        addCardFab.setOnClickListener(v -> addNewCardEntry());
         saveButton.setOnClickListener(v -> saveConfiguration());
 
         // Set result to CANCELED initially
         setResult(RESULT_CANCELED);
+    }
+
+    // ADD THIS METHOD FOR TOOLBAR BACK BUTTON
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
     }
 
     private void loadExistingData() {
@@ -109,7 +132,8 @@ public class CreditCardWidgetConfigActivity extends Activity {
     private void addCardEntry(String cardName, long dueDate) {
         View cardView = LayoutInflater.from(this).inflate(R.layout.card_entry_item, cardsContainer, false);
 
-        EditText cardNameEdit = cardView.findViewById(R.id.card_name_edit);
+        // UPDATED TO USE TextInputEditText
+        TextInputEditText cardNameEdit = cardView.findViewById(R.id.card_name_edit);
         Button dueDateButton = cardView.findViewById(R.id.due_date_button);
         ImageButton removeButton = cardView.findViewById(R.id.remove_card_button);
 
@@ -207,13 +231,14 @@ public class CreditCardWidgetConfigActivity extends Activity {
         finish();
     }
 
+    // UPDATED CardEntry CLASS
     private static class CardEntry {
         View cardView;
-        EditText cardNameEdit;
+        TextInputEditText cardNameEdit;  // CHANGED FROM EditText
         Button dueDateButton;
         Calendar selectedDate;
 
-        CardEntry(View cardView, EditText cardNameEdit, Button dueDateButton, Calendar selectedDate) {
+        CardEntry(View cardView, TextInputEditText cardNameEdit, Button dueDateButton, Calendar selectedDate) {
             this.cardView = cardView;
             this.cardNameEdit = cardNameEdit;
             this.dueDateButton = dueDateButton;

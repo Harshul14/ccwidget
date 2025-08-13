@@ -117,21 +117,24 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.card_name, displayName);
         views.setTextViewText(R.id.due_date, dueDateStr);
 
-        // Set days remaining text and color
+        // Set days remaining text and color - UPDATED with modern colors
         String daysText;
         int textColor;
         if (daysRemaining < 0) {
             daysText = "OVERDUE";
-            textColor = android.graphics.Color.RED;
+            textColor = android.graphics.Color.parseColor("#F44336"); // Material Red
         } else if (daysRemaining == 0) {
-            daysText = "DUE TODAY";
-            textColor = android.graphics.Color.RED;
+            daysText = "TODAY";
+            textColor = android.graphics.Color.parseColor("#F44336"); // Material Red
         } else if (daysRemaining <= 3) {
-            daysText = daysRemaining + " days";
-            textColor = android.graphics.Color.parseColor("#FF9800"); // Orange
+            daysText = String.valueOf(daysRemaining);
+            textColor = android.graphics.Color.parseColor("#FF9800"); // Material Orange
+        } else if (daysRemaining <= 7) {
+            daysText = String.valueOf(daysRemaining);
+            textColor = android.graphics.Color.parseColor("#FFC107"); // Material Amber
         } else {
-            daysText = daysRemaining + " days";
-            textColor = android.graphics.Color.parseColor("#4CAF50"); // Green
+            daysText = String.valueOf(daysRemaining);
+            textColor = android.graphics.Color.parseColor("#4CAF50"); // Material Green
         }
 
         views.setTextViewText(R.id.days_remaining, daysText);

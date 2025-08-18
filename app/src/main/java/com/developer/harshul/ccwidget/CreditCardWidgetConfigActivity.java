@@ -1,8 +1,5 @@
 package com.developer.harshul.ccwidget;
 
-// CreditCardWidgetConfigActivity.java - COMPLETE FIXED VERSION
-
-import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
@@ -11,12 +8,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
-import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.ImageButton;
 import java.util.Calendar;
 import java.util.ArrayList;
@@ -24,8 +18,6 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
-
-// ADD THESE IMPORTS
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;

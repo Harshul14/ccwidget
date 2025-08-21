@@ -1,11 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:startColor="@color/widget_surface"
-        android:endColor="@color/widget_surface"
-        android:angle="90" />
-    <corners android:radius="@dimen/corner_radius_md" />
-    <stroke
-        android:width="1dp"
-        android:color="@color/widget_outline" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow Layer -->
+    <item
+        android:left="2dp"
+        android:top="4dp"
+        android:right="-2dp"
+        android:bottom="-4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#10000000" />
+            <corners android:radius="@dimen/corner_radius_lg" />
+        </shape>
+    </item>
+
+    <!-- Main Background -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_surface" />
+            <corners android:radius="@dimen/corner_radius_lg" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/widget_outline" />
+        </shape>
+    </item>
+
+    <!-- Glassmorphism Effect -->
+    <item
+        android:left="1dp"
+        android:top="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#10FFFFFF"
+                android:endColor="#05FFFFFF"
+                android:angle="135" />
+            <corners android:radius="15dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,32 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
-    <color name="primary">#6200EE</color>
-    <color name="primary_variant">#3700B3</color>
-    <color name="secondary">#03DAC6</color>
-    <color name="secondary_variant">#018786</color>
+    <!-- Primary Colors - Modern Blue Gradient -->
+    <color name="primary">#667EEA</color>
+    <color name="primary_variant">#764BA2</color>
+    <color name="secondary">#F093FB</color>
+    <color name="secondary_variant">#F5576C</color>
 
-    <!-- Surface Colors -->
+    <!-- Surface Colors - Clean & Modern -->
     <color name="surface">#FFFFFF</color>
-    <color name="surface_variant">#F5F5F5</color>
-    <color name="background">#FAFAFA</color>
+    <color name="surface_variant">#F8FAFC</color>
+    <color name="background">#F1F5F9</color>
 
     <!-- Status Colors -->
-    <color name="success">#4CAF50</color>
-    <color name="warning">#FF9800</color>
-    <color name="error">#F44336</color>
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
 
     <!-- Text Colors -->
-    <color name="on_surface">#1C1B1F</color>
-    <color name="on_surface_variant">#49454F</color>
-    <color name="outline">#79747E</color>
+    <color name="on_surface">#1E293B</color>
+    <color name="on_surface_variant">#64748B</color>
+    <color name="outline">#CBD5E1</color>
 
-    <!-- Widget Colors -->
+    <!-- Widget Colors - Modern Glassmorphism -->
     <color name="widget_surface">#FFFFFF</color>
-    <color name="widget_on_surface">#1C1B1F</color>
-    <color name="widget_outline">#E7E0EC</color>
+    <color name="widget_on_surface">#1E293B</color>
+    <color name="widget_outline">#E2E8F0</color>
+    <color name="widget_shadow">#1E293B</color>
 
     <!-- Card Colors -->
     <color name="card_surface">#FFFFFF</color>
-    <color name="card_outline">#E7E0EC</color>
+    <color name="card_outline">#E2E8F0</color>
+
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#667EEA</color>
+    <color name="gradient_end">#764BA2</color>
+
+    <!-- Accent Colors -->
+    <color name="accent_purple">#8B5CF6</color>
+    <color name="accent_pink">#EC4899</color>
+    <color name="accent_blue">#06B6D4</color>
 </resources>

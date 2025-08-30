@@ -64,6 +64,12 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
             String cardsDataJson = prefs.getString(CARDS_DATA_KEY, "");
 
             CardData cardData = parseCardData(cardsDataJson);
+
+            // Save updated data if any dates were modified
+            if (cardData.updatedData != null) {
+                saveUpdatedData(context, appWidgetId, cardData.updatedData);
+            }
+
             updateWidgetDisplay(views, cardData);
             setupClickIntent(context, views, appWidgetId);
 
@@ -99,37 +105,41 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         long nearestDueDate = Long.MAX_VALUE;
         long currentTime = System.currentTimeMillis();
         int totalCards = cardsArray.length();
+        boolean dataUpdated = false;
 
-        // First pass: Look for future dates or today
+        // Create a new array to store updated dates
+        JSONArray updatedCardsArray = new JSONArray();
+
+        // First pass: Update overdue dates and find nearest
         for (int i = 0; i < cardsArray.length(); i++) {
             JSONObject cardObj = cardsArray.getJSONObject(i);
             String cardName = cardObj.optString("name", "Credit Card");
-            long dueDate = cardObj.optLong("dueDate", getDefaultDueDate());
+            long originalDueDate = cardObj.optLong("dueDate", getDefaultDueDate());
 
-            if (dueDate >= currentTime - TimeUnit.DAYS.toMillis(1)) {
-                if (dueDate < nearestDueDate) {
-                    nearestDueDate = dueDate;
-                    nearestCardName = cardName;
-                }
+            // Update overdue date to next month
+            long updatedDueDate = updateOverdueDateToNextMonth(originalDueDate);
+
+            // Track if any date was updated
+            if (updatedDueDate != originalDueDate) {
+                dataUpdated = true;
+            }
+
+            // Create updated card object
+            JSONObject updatedCardObj = new JSONObject();
+            updatedCardObj.put("name", cardName);
+            updatedCardObj.put("dueDate", updatedDueDate);
+            updatedCardsArray.put(updatedCardObj);
+
+            // Find nearest due date
+            if (updatedDueDate < nearestDueDate) {
+                nearestDueDate = updatedDueDate;
+                nearestCardName = cardName;
             }
         }
 
-        // Second pass: If no future dates, find most recent overdue
-        if (nearestDueDate == Long.MAX_VALUE) {
-            nearestDueDate = Long.MIN_VALUE;
-            for (int i = 0; i < cardsArray.length(); i++) {
-                JSONObject cardObj = cardsArray.getJSONObject(i);
-                String cardName = cardObj.optString("name", "Credit Card");
-                long dueDate = cardObj.optLong("dueDate", getDefaultDueDate());
-
-                if (dueDate > nearestDueDate) {
-                    nearestDueDate = dueDate;
-                    nearestCardName = cardName;
-                }
-            }
-        }
-
-        return new CardData(nearestCardName, nearestDueDate, totalCards);
+        // If data was updated, we need to save it back
+        // Note: This would require passing context to save, so we'll handle this in updateAppWidget
+        return new CardData(nearestCardName, nearestDueDate, totalCards, dataUpdated ? updatedCardsArray : null);
     }
 
     private static CardData getDefaultCardData() {
@@ -271,16 +281,75 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    private static long updateOverdueDateToNextMonth(long dueDate) {
+        try {
+            Calendar currentCal = Calendar.getInstance();
+            Calendar dueCal = Calendar.getInstance();
+            dueCal.setTimeInMillis(dueDate);
+
+            // Get current date without time
+            currentCal.set(Calendar.HOUR_OF_DAY, 0);
+            currentCal.set(Calendar.MINUTE, 0);
+            currentCal.set(Calendar.SECOND, 0);
+            currentCal.set(Calendar.MILLISECOND, 0);
+
+            // Get due date without time
+            dueCal.set(Calendar.HOUR_OF_DAY, 0);
+            dueCal.set(Calendar.MINUTE, 0);
+            dueCal.set(Calendar.SECOND, 0);
+            dueCal.set(Calendar.MILLISECOND, 0);
+
+            // If due date is in the past, advance to next month with same day
+            if (dueCal.before(currentCal)) {
+                int dayOfMonth = dueCal.get(Calendar.DAY_OF_MONTH);
+
+                // Start from current month and add 1
+                Calendar nextMonth = Calendar.getInstance();
+                nextMonth.add(Calendar.MONTH, 1);
+                nextMonth.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                nextMonth.set(Calendar.HOUR_OF_DAY, 0);
+                nextMonth.set(Calendar.MINUTE, 0);
+                nextMonth.set(Calendar.SECOND, 0);
+                nextMonth.set(Calendar.MILLISECOND, 0);
+
+                return nextMonth.getTimeInMillis();
+            }
+
+            return dueDate; // Date is not overdue, return as is
+        } catch (Exception e) {
+            Log.w(TAG, "Error updating overdue date", e);
+            return dueDate; // Return original date if update fails
+        }
+    }
+
+    private static void saveUpdatedData(Context context, int appWidgetId, JSONArray updatedData) {
+        try {
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(CARDS_DATA_KEY, updatedData.toString());
+            editor.apply(); // Use apply for background save
+            Log.d(TAG, "Updated overdue dates for widget " + appWidgetId);
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving updated data", e);
+        }
+    }
+
     // Data classes for better organization
     private static class CardData {
         final String name;
         final long dueDate;
         final int totalCards;
+        final JSONArray updatedData; // New field for updated data
 
         CardData(String name, long dueDate, int totalCards) {
+            this(name, dueDate, totalCards, null);
+        }
+
+        CardData(String name, long dueDate, int totalCards, JSONArray updatedData) {
             this.name = name != null ? name : "Credit Card";
             this.dueDate = dueDate;
             this.totalCards = Math.max(totalCards, 1);
+            this.updatedData = updatedData;
         }
     }
 

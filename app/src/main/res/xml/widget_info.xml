@@ -3,7 +3,7 @@
     android:minHeight="40dp"
     android:updatePeriodMillis="3600000"
     android:initialLayout="@layout/widget_credit_card"
-    android:configure="com.developer.harshul.ccwidget.CreditCardWidgetConfigActivity"
+    android:configure="com.developer.harshul.pinvoke.CreditCardWidgetConfigActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewImage="@drawable/ic_launcher_foreground"

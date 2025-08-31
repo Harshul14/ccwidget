@@ -1,4 +1,4 @@
-package com.developer.harshul.ccwidget;
+package com.developer.harshul.pinvoke;
 
 import org.junit.Test;
 

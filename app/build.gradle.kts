@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.developer.harshul.ccwidget"
+    namespace = "com.developer.harshul.pinvoke"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.developer.harshul.ccwidget"
+        applicationId = "com.developer.harshul.pinvoke"
         minSdk = 30
         targetSdk = 34
         versionCode = 1

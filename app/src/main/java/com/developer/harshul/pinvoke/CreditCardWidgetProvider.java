@@ -6,14 +6,19 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.widget.RemoteViews;
 import androidx.core.content.ContextCompat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,7 +39,7 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         executorService.execute(() -> {
             for (int appWidgetId : appWidgetIds) {
                 try {
-                    updateAppWidget(context, appWidgetManager, appWidgetId);
+                    updateAppWidget(context, appWidgetManager, appWidgetId, null);
                 } catch (Exception e) {
                     Log.e(TAG, "Error updating widget " + appWidgetId, e);
                     showErrorState(context, appWidgetManager, appWidgetId);
@@ -43,7 +48,24 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         });
     }
 
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        executorService.execute(() -> {
+            try {
+                updateAppWidget(context, appWidgetManager, appWidgetId, newOptions);
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating widget on options changed " + appWidgetId, e);
+                showErrorState(context, appWidgetManager, appWidgetId);
+            }
+        });
+    }
+
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        updateAppWidget(context, appWidgetManager, appWidgetId, null);
+    }
+
+    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle options) {
         if (context == null || appWidgetManager == null) {
             Log.w(TAG, "Context or AppWidgetManager is null");
             return;
@@ -55,14 +77,36 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
             SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
             String cardsDataJson = prefs.getString(CARDS_DATA_KEY, "");
 
-            CardData cardData = parseCardData(cardsDataJson);
+            ParseResult result = parseCardData(cardsDataJson);
+            List<CardData> cardDataList = result.cardData;
 
-            if (cardData.updatedData != null) {
-                saveUpdatedData(context, appWidgetId, cardData.updatedData);
+            if (result.dataUpdated) {
+                saveUpdatedData(context, appWidgetId, result.updatedData);
             }
 
-            updateWidgetDisplay(context, views, cardData);
-            setupClickIntent(context, views, appWidgetId);
+            Intent intent = new Intent(context, CreditCardWidgetConfigActivity.class);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+            intent.setAction("com.developer.harshul.pinvoke.CONFIGURE." + appWidgetId);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            if (cardDataList.isEmpty()) {
+                views.setViewVisibility(R.id.empty_view, View.VISIBLE);
+                views.setViewVisibility(R.id.cards_view_flipper, View.GONE);
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            } else {
+                views.setViewVisibility(R.id.empty_view, View.GONE);
+                views.setViewVisibility(R.id.cards_view_flipper, View.VISIBLE);
+
+                views.removeAllViews(R.id.cards_view_flipper);
+                int widgetWidth = getWidgetWidth(appWidgetManager, appWidgetId, options);
+
+                for (CardData cardData : cardDataList) {
+                    RemoteViews cardView = new RemoteViews(context.getPackageName(), R.layout.widget_card_item);
+                    updateWidgetDisplay(context, cardView, cardData, widgetWidth);
+                    cardView.setOnClickPendingIntent(R.id.widget_item_container, pendingIntent);
+                    views.addView(R.id.cards_view_flipper, cardView);
+                }
+            }
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
 
@@ -72,30 +116,37 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private static CardData parseCardData(String cardsDataJson) {
+    private static int getWidgetWidth(AppWidgetManager appWidgetManager, int appWidgetId, Bundle options) {
+        Bundle newOptions = (options == null) ? appWidgetManager.getAppWidgetOptions(appWidgetId) : options;
+        if (newOptions != null && newOptions.containsKey(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)) {
+            return newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+        }
+        return 0;
+    }
+
+    private static ParseResult parseCardData(String cardsDataJson) {
         if (cardsDataJson == null || cardsDataJson.trim().isEmpty()) {
-            return getDefaultCardData();
+            return new ParseResult(Collections.emptyList(), null, false);
         }
 
         try {
             JSONArray cardsArray = new JSONArray(cardsDataJson);
             if (cardsArray.length() == 0) {
-                return getDefaultCardData();
+                return new ParseResult(Collections.emptyList(), null, false);
             }
 
-            return findNearestCard(cardsArray);
+            return processCards(cardsArray);
 
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing card data", e);
-            return getDefaultCardData();
+            return new ParseResult(Collections.emptyList(), null, false);
         }
     }
 
-    private static CardData findNearestCard(JSONArray cardsArray) throws JSONException {
-        String nearestCardName = "";
-        long nearestDueDate = Long.MAX_VALUE;
-        boolean dataUpdated = false;
+    private static ParseResult processCards(JSONArray cardsArray) throws JSONException {
+        List<CardData> cardDataList = new ArrayList<>();
         JSONArray updatedCardsArray = new JSONArray();
+        boolean dataUpdated = false;
 
         for (int i = 0; i < cardsArray.length(); i++) {
             JSONObject cardObj = cardsArray.getJSONObject(i);
@@ -106,26 +157,21 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
             if (updatedDueDate != originalDueDate) {
                 dataUpdated = true;
             }
+            
+            cardDataList.add(new CardData(cardName, updatedDueDate));
 
             JSONObject updatedCardObj = new JSONObject();
             updatedCardObj.put("name", cardName);
             updatedCardObj.put("dueDate", updatedDueDate);
             updatedCardsArray.put(updatedCardObj);
-
-            if (updatedDueDate < nearestDueDate) {
-                nearestDueDate = updatedDueDate;
-                nearestCardName = cardName;
-            }
         }
+        
+        Collections.sort(cardDataList, (c1, c2) -> Long.compare(c1.dueDate, c2.dueDate));
 
-        return new CardData(nearestCardName, nearestDueDate, cardsArray.length(), dataUpdated ? updatedCardsArray : null);
+        return new ParseResult(cardDataList, dataUpdated ? updatedCardsArray : null, dataUpdated);
     }
 
-    private static CardData getDefaultCardData() {
-        return new CardData("Credit Card", getDefaultDueDate(), 1);
-    }
-
-    private static void updateWidgetDisplay(Context context, RemoteViews views, CardData cardData) {
+    private static void updateWidgetDisplay(Context context, RemoteViews views, CardData cardData, int widgetWidth) {
         try {
             long currentTime = System.currentTimeMillis();
             long diffMillis = cardData.dueDate - currentTime;
@@ -134,76 +180,61 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("MMM dd", Locale.getDefault());
             String dueDateStr = dateFormatter.format(new Date(cardData.dueDate));
 
-            String displayName = cardData.name;
-            if (cardData.totalCards > 1) {
-                displayName = cardData.name + " (+" + (cardData.totalCards - 1) + " more)";
-            }
-
-            views.setTextViewText(R.id.card_name, displayName != null ? displayName : "Credit Card");
+            views.setTextViewText(R.id.card_name, cardData.name);
             views.setTextViewText(R.id.due_date, dueDateStr);
 
-            DaysDisplayInfo displayInfo = calculateDaysDisplay(context, daysRemaining);
+            DaysDisplayInfo displayInfo = calculateDaysDisplay(context, daysRemaining, widgetWidth);
             views.setTextViewText(R.id.days_remaining, displayInfo.text);
             views.setTextColor(R.id.days_remaining, displayInfo.color);
+            views.setTextViewText(R.id.days_label, displayInfo.label);
 
         } catch (Exception e) {
             Log.e(TAG, "Error updating widget display", e);
             views.setTextViewText(R.id.card_name, "Credit Card");
             views.setTextViewText(R.id.due_date, "---");
             views.setTextViewText(R.id.days_remaining, "--");
+            views.setTextViewText(R.id.days_label, "days");
         }
     }
 
-    private static DaysDisplayInfo calculateDaysDisplay(Context context, int daysRemaining) {
+    private static DaysDisplayInfo calculateDaysDisplay(Context context, int daysRemaining, int widgetWidth) {
         String daysText;
+        String label = context.getString(R.string.days);
         int textColor;
+        boolean useShortText = widgetWidth > 0 && widgetWidth < 180; // 180dp as a threshold for small widget
 
         if (daysRemaining < 0) {
-            daysText = "OVERDUE";
+            daysText = useShortText ? "DUE" : "OVERDUE";
+            label = "";
             textColor = ContextCompat.getColor(context, R.color.error);
         } else if (daysRemaining == 0) {
-            daysText = "TODAY";
+            daysText = useShortText ? "DUE" : "TODAY";
+            label = "";
             textColor = ContextCompat.getColor(context, R.color.error);
-        } else if (daysRemaining <= 3) {
-            daysText = String.valueOf(daysRemaining);
-            textColor = ContextCompat.getColor(context, R.color.warning);
-        } else if (daysRemaining <= 7) {
-            daysText = String.valueOf(daysRemaining);
-            textColor = ContextCompat.getColor(context, R.color.amber);
         } else {
             daysText = String.valueOf(daysRemaining);
-            textColor = ContextCompat.getColor(context, R.color.success);
+            if (daysRemaining == 1) {
+                label = "day";
+            }
+            if (daysRemaining <= 3) {
+                textColor = ContextCompat.getColor(context, R.color.warning);
+            } else if (daysRemaining <= 7) {
+                textColor = ContextCompat.getColor(context, R.color.amber);
+            } else {
+                textColor = ContextCompat.getColor(context, R.color.success);
+            }
         }
-
-        return new DaysDisplayInfo(daysText, textColor);
-    }
-
-    private static void setupClickIntent(Context context, RemoteViews views, int appWidgetId) {
-        try {
-            Intent intent = new Intent(context, CreditCardWidgetConfigActivity.class);
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-            PendingIntent pendingIntent = PendingIntent.getActivity(
-                    context, appWidgetId, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error setting up click intent", e);
-        }
+        
+        return new DaysDisplayInfo(daysText, label, textColor);
     }
 
     private static void showErrorState(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
                 RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_credit_card);
-                views.setTextViewText(R.id.card_name, "Error");
-                views.setTextViewText(R.id.due_date, "Tap to retry");
-                views.setTextViewText(R.id.days_remaining, "!");
-                views.setTextColor(R.id.days_remaining, ContextCompat.getColor(context, R.color.error));
-
-                setupClickIntent(context, views, appWidgetId);
+                views.setViewVisibility(R.id.empty_view, View.VISIBLE);
+                views.setTextViewText(R.id.empty_view, "Error. Tap to retry.");
+                views.setViewVisibility(R.id.cards_view_flipper, View.GONE);
                 appWidgetManager.updateAppWidget(appWidgetId, views);
             } catch (Exception e) {
                 Log.e(TAG, "Error showing error state", e);
@@ -246,7 +277,14 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
             int dayOfMonth = dueCal.get(Calendar.DAY_OF_MONTH);
 
             Calendar nextMonth = Calendar.getInstance();
+            nextMonth.setTimeInMillis(System.currentTimeMillis());
             nextMonth.add(Calendar.MONTH, 1);
+            
+            int maxDay = nextMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
+            if(dayOfMonth > maxDay) {
+                dayOfMonth = maxDay;
+            }
+
             nextMonth.set(Calendar.DAY_OF_MONTH, dayOfMonth);
             nextMonth.set(Calendar.HOUR_OF_DAY, 0);
             nextMonth.set(Calendar.MINUTE, 0);
@@ -260,35 +298,42 @@ public class CreditCardWidgetProvider extends AppWidgetProvider {
     }
 
     private static void saveUpdatedData(Context context, int appWidgetId, JSONArray updatedData) {
+        if (updatedData == null) return;
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
         prefs.edit().putString(CARDS_DATA_KEY, updatedData.toString()).apply();
         Log.d(TAG, "Updated overdue dates for widget " + appWidgetId);
     }
 
+    private static class ParseResult {
+        final List<CardData> cardData;
+        final JSONArray updatedData;
+        final boolean dataUpdated;
+        
+        ParseResult(List<CardData> cardData, JSONArray updatedData, boolean dataUpdated) {
+            this.cardData = cardData;
+            this.updatedData = updatedData;
+            this.dataUpdated = dataUpdated;
+        }
+    }
+    
     private static class CardData {
         final String name;
         final long dueDate;
-        final int totalCards;
-        final JSONArray updatedData;
 
-        CardData(String name, long dueDate, int totalCards) {
-            this(name, dueDate, totalCards, null);
-        }
-
-        CardData(String name, long dueDate, int totalCards, JSONArray updatedData) {
+        CardData(String name, long dueDate) {
             this.name = name != null ? name : "Credit Card";
             this.dueDate = dueDate;
-            this.totalCards = Math.max(totalCards, 1);
-            this.updatedData = updatedData;
         }
     }
 
     private static class DaysDisplayInfo {
         final String text;
+        final String label;
         final int color;
 
-        DaysDisplayInfo(String text, int color) {
+        DaysDisplayInfo(String text, String label, int color) {
             this.text = text != null ? text : "--";
+            this.label = label;
             this.color = color;
         }
     }

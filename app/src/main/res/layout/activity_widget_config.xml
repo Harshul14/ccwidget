@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/surface"
-            app:title="Credit Card Widget"
+            app:title="@string/credit_card_widget"
             app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineSmall" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -49,7 +49,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Configure your credit cards"
+                        android:text="@string/configure_your_credit_cards"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textColor="@color/on_surface"
                         android:layout_marginBottom="@dimen/spacing_xs" />
@@ -57,7 +57,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Add your credit cards and due dates to track payments"
+                        android:text="@string/add_your_credit_cards_and_due_dates"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="@color/on_surface_variant" />
 
@@ -69,7 +69,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Your Cards"
+                android:text="@string/your_cards"
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                 android:textColor="@color/on_surface"
                 android:layout_marginBottom="@dimen/spacing_md" />
@@ -86,7 +86,7 @@
                 android:id="@+id/save_button"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/button_height"
-                android:text="Save Widget"
+                android:text="@string/save_widget"
                 android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
                 app:cornerRadius="@dimen/corner_radius_md"
                 style="@style/Widget.Material3.Button" />
@@ -103,7 +103,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/spacing_md"
         android:src="@drawable/ic_add_24"
-        android:contentDescription="Add Card"
+        android:contentDescription="@string/add_card"
         app:tint="@android:color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

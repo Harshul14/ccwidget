@@ -41,7 +41,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Card Details"
+                    android:text="@string/card_details"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                     android:textColor="@color/on_surface"
                     android:fontFamily="sans-serif-medium" />
@@ -54,7 +54,7 @@
                 android:layout_height="48dp"
                 android:background="@drawable/remove_button_background"
                 android:src="@drawable/ic_remove_24"
-                android:contentDescription="Remove Card"
+                android:contentDescription="@string/remove_card"
                 android:scaleType="fitCenter"
                 android:elevation="2dp" />
 
@@ -77,7 +77,7 @@
                 android:id="@+id/card_name_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="e.g., Visa Premium, Chase Sapphire"
+                android:hint="@string/card_name_hint"
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                 android:inputType="text"
                 android:maxLines="1"
@@ -91,7 +91,7 @@
             android:id="@+id/due_date_button"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Select Due Date"
+            android:text="@string/select_due_date"
             android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
             android:textColor="@color/primary"
             android:fontFamily="sans-serif-medium"

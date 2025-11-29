@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@color/background">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -15,15 +16,15 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/surface"
-            app:title="@string/credit_card_widget"
+            app:title="@string/configure_widget"
             app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineSmall" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.core.widget.NestedScrollView
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,79 +32,33 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_md">
 
-            <!-- Header Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/spacing_lg"
-                app:cardCornerRadius="@dimen/corner_radius_md"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/spacing_md">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/configure_your_credit_cards"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        android:textColor="@color/on_surface"
-                        android:layout_marginBottom="@dimen/spacing_xs" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/add_your_credit_cards_and_due_dates"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="@color/on_surface_variant" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Cards Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/your_cards"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="@color/on_surface"
-                android:layout_marginBottom="@dimen/spacing_md" />
-
             <LinearLayout
                 android:id="@+id/cards_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="@dimen/spacing_lg" />
+                android:orientation="vertical" />
 
-            <!-- Save Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/save_button"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/button_height"
-                android:text="@string/save_widget"
-                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                app:cornerRadius="@dimen/corner_radius_md"
-                style="@style/Widget.Material3.Button" />
+                android:id="@+id/add_card_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:text="@string/add_card"
+                app:icon="@drawable/ic_add_24" />
 
         </LinearLayout>
+    </ScrollView>
 
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/add_card_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/save_button"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
         android:layout_margin="@dimen/spacing_md"
-        android:src="@drawable/ic_add_24"
-        android:contentDescription="@string/add_card"
-        app:tint="@android:color/white" />
+        android:text="@string/save_widget"
+        android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+        app:cornerRadius="@dimen/corner_radius_md" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</LinearLayout>

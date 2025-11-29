@@ -18,7 +18,6 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,7 +39,7 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
 
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private LinearLayout cardsContainer;
-    private FloatingActionButton addCardFab;
+    private Button addCardButton;
     private Button saveButton;
     private List<CardEntry> cardEntries;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -63,10 +62,11 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
 
         cardsContainer = findViewById(R.id.cards_container);
-        addCardFab = findViewById(R.id.add_card_button);
+        addCardButton = findViewById(R.id.add_card_button);
         saveButton = findViewById(R.id.save_button);
         cardEntries = new ArrayList<>();
     }
@@ -84,13 +84,13 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
     }
 
     private void setupEventListeners() {
-        addCardFab.setOnClickListener(v -> addNewCardEntry());
+        addCardButton.setOnClickListener(v -> addNewCardEntry());
         saveButton.setOnClickListener(v -> saveConfiguration());
     }
 
     @Override
     public boolean onSupportNavigateUp() {
-        finish();
+        onBackPressed();
         return true;
     }
 

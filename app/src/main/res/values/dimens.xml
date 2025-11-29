@@ -6,34 +6,19 @@
     <dimen name="spacing_md">16dp</dimen>
     <dimen name="spacing_lg">24dp</dimen>
     <dimen name="spacing_xl">32dp</dimen>
-    <dimen name="spacing_xxl">48dp</dimen>
 
     <!-- Modern Corner Radius -->
-    <dimen name="corner_radius_sm">12dp</dimen>
-    <dimen name="corner_radius_md">16dp</dimen>
-    <dimen name="corner_radius_lg">20dp</dimen>
-    <dimen name="corner_radius_xl">24dp</dimen>
-
-    <!-- Text Sizes -->
-    <dimen name="text_size_caption">12sp</dimen>
-    <dimen name="text_size_body">14sp</dimen>
-    <dimen name="text_size_title">16sp</dimen>
-    <dimen name="text_size_headline">20sp</dimen>
-    <dimen name="text_size_display">28sp</dimen>
+    <dimen name="corner_radius_sm">8dp</dimen>
+    <dimen name="corner_radius_md">12dp</dimen>
+    <dimen name="corner_radius_lg">16dp</dimen>
 
     <!-- Responsive Widget Text Sizes -->
     <dimen name="text_size_responsive_caption">10sp</dimen>
     <dimen name="text_size_responsive_body">12sp</dimen>
     <dimen name="text_size_responsive_title">14sp</dimen>
-    <dimen name="text_size_responsive_headline">18sp</dimen>
+    <dimen name="text_size_responsive_headline">20sp</dimen>
 
     <!-- Component Heights -->
     <dimen name="button_height">56dp</dimen>
-    <dimen name="input_height">60dp</dimen>
-    <dimen name="fab_size">64dp</dimen>
 
-    <!-- Elevation -->
-    <dimen name="elevation_card">8dp</dimen>
-    <dimen name="elevation_widget">12dp</dimen>
-    <dimen name="elevation_fab">16dp</dimen>
 </resources>

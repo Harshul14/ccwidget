@@ -1,24 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Dark theme colors - Modern Dark -->
-    <color name="surface">#1E1E2E</color>
-    <color name="surface_variant">#313244</color>
-    <color name="background">#11111B</color>
+    <color name="primary">#7A70E7</color>
+    <color name="secondary">#9D95E9</color>
+    
+    <color name="surface">#1F2937</color>
+    <color name="background">#111827</color>
 
-    <color name="on_surface">#CDD6F4</color>
-    <color name="on_surface_variant">#A6ADC8</color>
-    <color name="outline">#45475A</color>
+    <color name="on_surface">#F9FAFB</color>
+    <color name="on_surface_variant">#9CA3AF</color>
+    <color name="outline">#4B5563</color>
 
     <!-- Widget Colors - Dark Glassmorphism -->
-    <color name="widget_surface">#1E1E2E</color>
-    <color name="widget_on_surface">#CDD6F4</color>
-    <color name="widget_outline">#45475A</color>
+    <color name="widget_surface">#1F2937</color>
+    <color name="widget_on_surface">#F9FAFB</color>
+    <color name="widget_outline">#4B5563</color>
     <color name="widget_shadow">#000000</color>
 
-    <color name="card_surface">#1E1E2E</color>
-    <color name="card_outline">#45475A</color>
+    <color name="card_surface">#1F2937</color>
+    <color name="card_outline">#4B5563</color>
 
     <!-- Dark Gradient Colors -->
-    <color name="gradient_start">#6C7EE1</color>
-    <color name="gradient_end">#8B6BB1</color>
+    <color name="gradient_start">#7A70E7</color>
+    <color name="gradient_end">#9D95E9</color>
 </resources>

@@ -13,79 +13,68 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.LinearLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
-import java.util.Calendar;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONException;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class CreditCardWidgetConfigActivity extends AppCompatActivity {
 
     private static final String TAG = "WidgetConfig";
     private static final String PREFS_NAME = "CCWidgetPrefs";
     private static final String CARDS_DATA_KEY = "cards_data";
-    private static final int MAX_CARDS = 10; // Prevent memory issues
+    private static final int MAX_CARDS = 10;
     private static final int MIN_CARDS = 1;
 
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private LinearLayout cardsContainer;
     private FloatingActionButton addCardFab;
-    private MaterialToolbar toolbar;
     private Button saveButton;
     private List<CardEntry> cardEntries;
-    private boolean isConfiguring = false; // Prevent multiple simultaneous saves
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_widget_config);
 
-        try {
-            setContentView(R.layout.activity_widget_config);
-            initializeViews();
-            setupWidget();
-            loadExistingData();
-            setupEventListeners();
-            setResult(RESULT_CANCELED);
-        } catch (Exception e) {
-            Log.e(TAG, "Error in onCreate", e);
-            showErrorAndFinish("Failed to initialize widget configuration");
-        }
+        initializeViews();
+        setupWidget();
+        loadExistingData();
+        setupEventListeners();
+        setResult(RESULT_CANCELED);
     }
 
     private void initializeViews() {
-        toolbar = findViewById(R.id.toolbar);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
         cardsContainer = findViewById(R.id.cards_container);
         addCardFab = findViewById(R.id.add_card_button);
         saveButton = findViewById(R.id.save_button);
         cardEntries = new ArrayList<>();
-
-        // Setup toolbar with null checks
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-            if (getSupportActionBar() != null) {
-                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            }
-        }
     }
 
     private void setupWidget() {
         Intent intent = getIntent();
         if (intent != null) {
-            Bundle extras = intent.getExtras();
-            if (extras != null) {
-                appWidgetId = extras.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
-            }
+            appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         }
 
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
@@ -95,27 +84,8 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
     }
 
     private void setupEventListeners() {
-        if (addCardFab != null) {
-            addCardFab.setOnClickListener(v -> {
-                try {
-                    addNewCardEntry();
-                } catch (Exception e) {
-                    Log.e(TAG, "Error adding new card", e);
-                    showToast("Failed to add new card");
-                }
-            });
-        }
-
-        if (saveButton != null) {
-            saveButton.setOnClickListener(v -> {
-                try {
-                    saveConfiguration();
-                } catch (Exception e) {
-                    Log.e(TAG, "Error saving configuration", e);
-                    showToast("Failed to save configuration");
-                }
-            });
-        }
+        addCardFab.setOnClickListener(v -> addNewCardEntry());
+        saveButton.setOnClickListener(v -> saveConfiguration());
     }
 
     @Override
@@ -125,17 +95,12 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
     }
 
     private void loadExistingData() {
-        try {
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
-            String cardsDataJson = prefs.getString(CARDS_DATA_KEY, "");
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
+        String cardsDataJson = prefs.getString(CARDS_DATA_KEY, "");
 
-            if (!TextUtils.isEmpty(cardsDataJson)) {
-                parseAndLoadCards(cardsDataJson);
-            } else {
-                addDefaultCard();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error loading existing data", e);
+        if (!TextUtils.isEmpty(cardsDataJson)) {
+            parseAndLoadCards(cardsDataJson);
+        } else {
             addDefaultCard();
         }
     }
@@ -143,24 +108,15 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
     private void parseAndLoadCards(String cardsDataJson) {
         try {
             JSONArray cardsArray = new JSONArray(cardsDataJson);
-            boolean hasValidCard = false;
-
-            for (int i = 0; i < Math.min(cardsArray.length(), MAX_CARDS); i++) {
+            for (int i = 0; i < cardsArray.length(); i++) {
                 JSONObject cardObj = cardsArray.optJSONObject(i);
                 if (cardObj != null) {
                     String cardName = cardObj.optString("name", "");
                     long dueDate = cardObj.optLong("dueDate", getDefaultDueDate());
-
-                    // Validate due date
                     if (isValidDate(dueDate)) {
                         addCardEntry(cardName, dueDate);
-                        hasValidCard = true;
                     }
                 }
-            }
-
-            if (!hasValidCard) {
-                addDefaultCard();
             }
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing cards data", e);
@@ -169,316 +125,148 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
     }
 
     private boolean isValidDate(long dateMillis) {
-        // Check if date is within reasonable bounds (not too far in past/future)
         long currentTime = System.currentTimeMillis();
-        long fiveYearsAgo = currentTime - TimeUnit.DAYS.toMillis(5 * 365);
-        long fiveYearsFromNow = currentTime + TimeUnit.DAYS.toMillis(5 * 365);
-
-        return dateMillis >= fiveYearsAgo && dateMillis <= fiveYearsFromNow;
+        long fiveYears = TimeUnit.DAYS.toMillis(5 * 365);
+        return dateMillis >= currentTime - fiveYears && dateMillis <= currentTime + fiveYears;
     }
 
     private void addDefaultCard() {
-        try {
-            Calendar defaultDate = Calendar.getInstance();
-            defaultDate.add(Calendar.MONTH, 1);
-            defaultDate.set(Calendar.DAY_OF_MONTH, 15);
-            addCardEntry("", defaultDate.getTimeInMillis());
-        } catch (Exception e) {
-            Log.e(TAG, "Error adding default card", e);
-        }
+        addCardEntry("", getDefaultDueDate());
     }
 
     private void addNewCardEntry() {
         if (cardEntries.size() >= MAX_CARDS) {
-            showToast("Maximum " + MAX_CARDS + " cards allowed");
+            showToast(getString(R.string.max_cards_allowed, MAX_CARDS));
             return;
         }
-
-        try {
-            Calendar defaultDate = Calendar.getInstance();
-            defaultDate.add(Calendar.MONTH, 1);
-            defaultDate.set(Calendar.DAY_OF_MONTH, 15);
-            addCardEntry("", defaultDate.getTimeInMillis());
-        } catch (Exception e) {
-            Log.e(TAG, "Error in addNewCardEntry", e);
-            showToast("Failed to add new card");
-        }
+        addCardEntry("", getDefaultDueDate());
     }
 
     private void addCardEntry(String cardName, long dueDate) {
-        try {
-            if (cardsContainer == null) {
-                Log.e(TAG, "Cards container is null");
-                return;
-            }
+        View cardView = LayoutInflater.from(this).inflate(R.layout.card_entry_item, cardsContainer, false);
+        TextInputEditText cardNameEdit = cardView.findViewById(R.id.card_name_edit);
+        Button dueDateButton = cardView.findViewById(R.id.due_date_button);
+        ImageButton removeButton = cardView.findViewById(R.id.remove_card_button);
 
-            View cardView = LayoutInflater.from(this).inflate(R.layout.card_entry_item, cardsContainer, false);
-            if (cardView == null) {
-                Log.e(TAG, "Failed to inflate card view");
-                return;
-            }
+        Calendar selectedDate = Calendar.getInstance();
+        selectedDate.setTimeInMillis(dueDate);
 
-            TextInputEditText cardNameEdit = cardView.findViewById(R.id.card_name_edit);
-            Button dueDateButton = cardView.findViewById(R.id.due_date_button);
-            ImageButton removeButton = cardView.findViewById(R.id.remove_card_button);
+        CardEntry cardEntry = new CardEntry(cardView, cardNameEdit, dueDateButton, selectedDate);
+        cardEntries.add(cardEntry);
 
-            if (cardNameEdit == null || dueDateButton == null || removeButton == null) {
-                Log.e(TAG, "Failed to find required views in card entry");
-                return;
-            }
+        cardNameEdit.setText(cardName);
+        updateDateButton(cardEntry);
 
-            Calendar selectedDate = Calendar.getInstance();
-            selectedDate.setTimeInMillis(dueDate);
+        dueDateButton.setOnClickListener(v -> showDatePicker(cardEntry));
+        removeButton.setOnClickListener(v -> removeCardEntry(cardEntry));
 
-            CardEntry cardEntry = new CardEntry(cardView, cardNameEdit, dueDateButton, selectedDate);
-            cardEntries.add(cardEntry);
-
-            // Set initial values safely
-            cardNameEdit.setText(cardName != null ? cardName : "");
-            updateDateButton(cardEntry);
-
-            // Set up listeners with error handling
-            dueDateButton.setOnClickListener(v -> {
-                try {
-                    showDatePicker(cardEntry);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error showing date picker", e);
-                    showToast("Failed to open date picker");
-                }
-            });
-
-            removeButton.setOnClickListener(v -> {
-                try {
-                    removeCardEntry(cardEntry);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error removing card", e);
-                    showToast("Failed to remove card");
-                }
-            });
-
-            cardsContainer.addView(cardView);
-            updateRemoveButtonsVisibility();
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error adding card entry", e);
-        }
+        cardsContainer.addView(cardView);
+        updateRemoveButtonsVisibility();
     }
 
     private void removeCardEntry(CardEntry cardEntry) {
         if (cardEntries.size() <= MIN_CARDS) {
-            showToast("At least one card is required");
+            showToast(getString(R.string.at_least_one_card));
             return;
         }
 
-        try {
-            if (cardsContainer != null && cardEntry.cardView != null) {
-                cardsContainer.removeView(cardEntry.cardView);
-            }
-            cardEntries.remove(cardEntry);
-            updateRemoveButtonsVisibility();
-        } catch (Exception e) {
-            Log.e(TAG, "Error in removeCardEntry", e);
-        }
+        cardsContainer.removeView(cardEntry.cardView);
+        cardEntries.remove(cardEntry);
+        updateRemoveButtonsVisibility();
     }
 
     private void updateRemoveButtonsVisibility() {
-        try {
-            boolean showRemoveButtons = cardEntries.size() > MIN_CARDS;
-            for (CardEntry entry : cardEntries) {
-                if (entry.cardView != null) {
-                    ImageButton removeButton = entry.cardView.findViewById(R.id.remove_card_button);
-                    if (removeButton != null) {
-                        removeButton.setVisibility(showRemoveButtons ? View.VISIBLE : View.GONE);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error updating remove buttons visibility", e);
+        boolean showRemoveButtons = cardEntries.size() > MIN_CARDS;
+        for (CardEntry entry : cardEntries) {
+            ImageButton removeButton = entry.cardView.findViewById(R.id.remove_card_button);
+            removeButton.setVisibility(showRemoveButtons ? View.VISIBLE : View.GONE);
         }
     }
 
     private void showDatePicker(CardEntry cardEntry) {
-        if (cardEntry == null || cardEntry.selectedDate == null) {
-            Log.w(TAG, "Invalid card entry for date picker");
-            return;
-        }
-
-        try {
-            DatePickerDialog datePickerDialog = new DatePickerDialog(
-                    this,
-                    (DatePicker view, int year, int month, int dayOfMonth) -> {
-                        try {
-                            cardEntry.selectedDate.set(Calendar.YEAR, year);
-                            cardEntry.selectedDate.set(Calendar.MONTH, month);
-                            cardEntry.selectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                            updateDateButton(cardEntry);
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error setting date", e);
-                            showToast("Failed to set date");
-                        }
-                    },
-                    cardEntry.selectedDate.get(Calendar.YEAR),
-                    cardEntry.selectedDate.get(Calendar.MONTH),
-                    cardEntry.selectedDate.get(Calendar.DAY_OF_MONTH)
-            );
-
-            // Set min date to today to prevent past dates
-            datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis());
-            datePickerDialog.show();
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error showing date picker", e);
-            showToast("Failed to open date picker");
-        }
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    cardEntry.selectedDate.set(year, month, dayOfMonth);
+                    updateDateButton(cardEntry);
+                },
+                cardEntry.selectedDate.get(Calendar.YEAR),
+                cardEntry.selectedDate.get(Calendar.MONTH),
+                cardEntry.selectedDate.get(Calendar.DAY_OF_MONTH)
+        );
+        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis());
+        datePickerDialog.show();
     }
 
     private void updateDateButton(CardEntry cardEntry) {
-        if (cardEntry == null || cardEntry.dueDateButton == null || cardEntry.selectedDate == null) {
-            return;
-        }
-
-        try {
-            String dateStr = android.text.format.DateFormat.getDateFormat(this)
-                    .format(cardEntry.selectedDate.getTime());
-            cardEntry.dueDateButton.setText("Due: " + dateStr);
-        } catch (Exception e) {
-            Log.w(TAG, "Error updating date button", e);
-            cardEntry.dueDateButton.setText("Due: Invalid Date");
-        }
+        String dateStr = android.text.format.DateFormat.getDateFormat(this).format(cardEntry.selectedDate.getTime());
+        cardEntry.dueDateButton.setText(getString(R.string.due_date_button_text, dateStr));
     }
 
     private void saveConfiguration() {
-        if (isConfiguring) {
-            return; // Prevent multiple saves
+        saveButton.setEnabled(false);
+        saveButton.setText(getString(R.string.saving));
+
+        JSONArray cardsArray = new JSONArray();
+        for (CardEntry entry : cardEntries) {
+            String cardName = entry.cardNameEdit.getText().toString().trim();
+            if (TextUtils.isEmpty(cardName)) {
+                cardName = getString(R.string.credit_card);
+            }
+
+            try {
+                JSONObject cardObj = new JSONObject();
+                cardObj.put("name", cardName);
+                cardObj.put("dueDate", entry.selectedDate.getTimeInMillis());
+                cardsArray.put(cardObj);
+            } catch (JSONException e) {
+                Log.w(TAG, "Error creating card JSON", e);
+            }
         }
 
-        isConfiguring = true;
-
-        try {
-            if (cardEntries.isEmpty()) {
-                showToast("Please add at least one card");
-                return;
-            }
-
-            JSONArray cardsArray = new JSONArray();
-            boolean hasValidCard = false;
-
-            for (CardEntry entry : cardEntries) {
-                if (entry.cardNameEdit == null || entry.selectedDate == null) {
-                    continue;
-                }
-
-                String cardName = entry.cardNameEdit.getText() != null ?
-                        entry.cardNameEdit.getText().toString().trim() : "";
-
-                if (TextUtils.isEmpty(cardName)) {
-                    cardName = "Credit Card";
-                }
-
-                try {
-                    JSONObject cardObj = new JSONObject();
-                    cardObj.put("name", cardName);
-                    cardObj.put("dueDate", entry.selectedDate.getTimeInMillis());
-                    cardsArray.put(cardObj);
-                    hasValidCard = true;
-                } catch (JSONException e) {
-                    Log.w(TAG, "Error creating card JSON", e);
-                }
-            }
-
-            if (!hasValidCard) {
-                showToast("Please configure at least one valid card");
-                return;
-            }
-
-            // Save in background to prevent ANR
-            saveDataAsync(cardsArray);
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error in saveConfiguration", e);
-            showToast("Failed to save configuration");
-        } finally {
-            isConfiguring = false;
+        if (cardsArray.length() == 0) {
+            showToast(getString(R.string.please_add_at_least_one_card));
+            saveButton.setEnabled(true);
+            saveButton.setText(getString(R.string.save_widget));
+            return;
         }
+
+        saveDataAsync(cardsArray);
     }
 
     private void saveDataAsync(JSONArray cardsArray) {
-        // Disable save button during operation
-        if (saveButton != null) {
-            saveButton.setEnabled(false);
-            saveButton.setText("Saving...");
-        }
+        executorService.execute(() -> {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
+            boolean success = prefs.edit().putString(CARDS_DATA_KEY, cardsArray.toString()).commit();
 
-        new Thread(() -> {
-            try {
-                // Save preferences
-                SharedPreferences prefs = getSharedPreferences(PREFS_NAME + appWidgetId, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putString(CARDS_DATA_KEY, cardsArray.toString());
+            mainHandler.post(() -> {
+                if (success) {
+                    AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
+                    CreditCardWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetId);
 
-                if (editor.commit()) { // Use commit for synchronous save
-                    // Update widget on main thread
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    mainHandler.post(() -> {
-                        try {
-                            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
-                            if (appWidgetManager != null) {
-                                CreditCardWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetId);
-                            }
-
-                            // Set result and finish
-                            Intent resultValue = new Intent();
-                            resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-                            setResult(RESULT_OK, resultValue);
-                            finish();
-
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error updating widget after save", e);
-                            showToast("Configuration saved but widget update failed");
-                            finish();
-                        }
-                    });
+                    Intent resultValue = new Intent();
+                    resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+                    setResult(RESULT_OK, resultValue);
+                    finish();
                 } else {
-                    runOnUiThread(() -> {
-                        showToast("Failed to save configuration");
-                        if (saveButton != null) {
-                            saveButton.setEnabled(true);
-                            saveButton.setText("Save Widget");
-                        }
-                    });
+                    showToast(getString(R.string.error_saving_configuration));
+                    saveButton.setEnabled(true);
+                    saveButton.setText(getString(R.string.save_widget));
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Error in background save", e);
-                runOnUiThread(() -> {
-                    showToast("Failed to save configuration");
-                    if (saveButton != null) {
-                        saveButton.setEnabled(true);
-                        saveButton.setText("Save Widget");
-                    }
-                });
-            }
-        }).start();
+            });
+        });
     }
 
     private long getDefaultDueDate() {
-        try {
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.MONTH, 1);
-            cal.set(Calendar.DAY_OF_MONTH, 15);
-            return cal.getTimeInMillis();
-        } catch (Exception e) {
-            Log.w(TAG, "Error getting default due date", e);
-            return System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30);
-        }
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, 1);
+        cal.set(Calendar.DAY_OF_MONTH, 15);
+        return cal.getTimeInMillis();
     }
 
     private void showToast(String message) {
-        try {
-            if (!isFinishing() && !isDestroyed()) {
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error showing toast", e);
+        if (!isFinishing() && !isDestroyed()) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -489,18 +277,12 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        try {
-            // Clear references to prevent memory leaks
-            if (cardEntries != null) {
-                cardEntries.clear();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error in onDestroy", e);
-        }
         super.onDestroy();
+        if (cardEntries != null) {
+            cardEntries.clear();
+        }
     }
 
-    // Enhanced CardEntry class with null safety
     private static class CardEntry {
         final View cardView;
         final TextInputEditText cardNameEdit;
@@ -511,12 +293,7 @@ public class CreditCardWidgetConfigActivity extends AppCompatActivity {
             this.cardView = cardView;
             this.cardNameEdit = cardNameEdit;
             this.dueDateButton = dueDateButton;
-            this.selectedDate = selectedDate != null ? selectedDate : Calendar.getInstance();
-        }
-
-        boolean isValid() {
-            return cardView != null && cardNameEdit != null &&
-                    dueDateButton != null && selectedDate != null;
+            this.selectedDate = selectedDate;
         }
     }
 }

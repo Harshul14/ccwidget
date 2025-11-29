@@ -25,41 +25,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
-        try {
-            MaterialButton addWidgetButton = findViewById(R.id.add_widget_button);
-            MaterialCardView infoCard = findViewById(R.id.info_card);
-
-            if (addWidgetButton != null) {
-                addWidgetButton.setOnClickListener(v -> {
-                    try {
-                        openWidgetPicker();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error opening widget picker", e);
-                        showToast("Failed to open widget picker");
-                    }
-                });
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error setting up views", e);
+        MaterialButton addWidgetButton = findViewById(R.id.add_widget_button);
+        if (addWidgetButton != null) {
+            addWidgetButton.setOnClickListener(v -> openWidgetPicker());
         }
     }
 
     private void openWidgetPicker() {
-        try {
-            // This will guide user to add widget through launcher
-            showToast("Long press on home screen and select 'Widgets' to add Credit Card Widget");
-        } catch (Exception e) {
-            Log.e(TAG, "Error in openWidgetPicker", e);
-        }
+        showToast(getString(R.string.long_press_on_home_screen_and_select_widgets));
     }
 
     private void showToast(String message) {
-        try {
-            if (!isFinishing() && !isDestroyed()) {
-                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error showing toast", e);
+        if (!isFinishing() && !isDestroyed()) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
     }
 

@@ -51,7 +51,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Credit Card Widget"
+                    android:text="@string/credit_card_widget"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineLarge"
                     android:textColor="@color/on_surface"
                     android:layout_marginBottom="@dimen/spacing_md"
@@ -62,7 +62,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Track your credit card due dates with style. Modern design meets powerful functionality."
+                    android:text="@string/track_your_credit_card_due_dates"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                     android:textColor="@color/on_surface_variant"
                     android:gravity="center"
@@ -95,7 +95,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Multiple credit cards support"
+                            android:text="@string/multiple_credit_cards_support"
                             android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                             android:textColor="@color/on_surface"
                             android:fontFamily="sans-serif-medium" />
@@ -120,7 +120,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Smart color-coded alerts"
+                            android:text="@string/smart_color_coded_alerts"
                             android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                             android:textColor="@color/on_surface"
                             android:fontFamily="sans-serif-medium" />
@@ -144,7 +144,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Beautiful modern interface"
+                            android:text="@string/beautiful_modern_interface"
                             android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                             android:textColor="@color/on_surface"
                             android:fontFamily="sans-serif-medium" />
@@ -157,7 +157,7 @@
                     android:id="@+id/add_widget_button"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="Add Widget to Home Screen"
+                    android:text="@string/add_widget_to_home_screen"
                     android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
                     android:textColor="@android:color/white"
                     android:fontFamily="sans-serif-medium"
@@ -179,7 +179,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Long press on your home screen → Widgets → Credit Card Widget"
+            android:text="@string/add_widget_instructions"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textColor="@color/on_surface_variant"
             android:gravity="center"
